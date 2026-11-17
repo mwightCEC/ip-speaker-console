@@ -1,0 +1,23 @@
+{
+  "name": "@ip-speaker-console/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fastify API and WebSocket server for the IP speaker",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --conditions=source --env-file-if-exists=.env src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.11",
+    "@ip-speaker-console/shared": "0.1.0",
+    "fastify": "^5.12.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "vitest": "^5.1.0"
+  }
+}
