@@ -1,0 +1,25 @@
+/* App-wide element rules. Colors come from the role tokens in tokens.css. */
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-text-body);
+}
+
+/* Every interactive element shows a 2px focus-color ring, in both themes. */
+.mantine-focus-auto:focus-visible,
+.mantine-focus-always:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * Clickable things show the pointer cursor. Mantine follows the native-button convention of a
+ * default arrow, so links and buttons are opted in here; checkboxes, radios and switches get it
+ * from the theme's cursorType.
+ */
+a[href],
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary {
+  cursor: pointer;
+}

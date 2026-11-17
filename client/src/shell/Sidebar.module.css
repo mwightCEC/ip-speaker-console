@@ -1,0 +1,31 @@
+.root {
+  padding-block: var(--mantine-spacing-sm);
+}
+
+/*
+ * Selected: the theme maps Mantine's "light" variant to the selected tint and text color; this
+ * adds the 3px action-colored indicator bar. Inactive items use secondary text so they never
+ * outweigh page headings. Square corners keep the one-sided bar clean.
+ */
+.link {
+  border-radius: 0;
+  padding-block: 10px;
+  padding-inline: var(--mantine-spacing-md);
+  box-shadow: inset 3px 0 0 transparent;
+
+  &:not([data-active]) {
+    color: var(--color-text-secondary);
+  }
+
+  &[data-active] {
+    box-shadow: inset 3px 0 0 var(--color-action-bg);
+  }
+}
+
+.label {
+  font-size: var(--mantine-font-size-sm);
+
+  .link[data-active] & {
+    font-weight: 600;
+  }
+}

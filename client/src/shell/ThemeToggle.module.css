@@ -1,0 +1,21 @@
+.root {
+  color: var(--color-titlebar-icon);
+
+  &:hover {
+    background-color: var(--color-titlebar-control-hover);
+    color: var(--color-titlebar-icon);
+  }
+}
+
+/* Light mode offers the moon (switch to dark); dark mode offers the sun. */
+.moon {
+  @mixin dark {
+    display: none;
+  }
+}
+
+.sun {
+  @mixin light {
+    display: none;
+  }
+}

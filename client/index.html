@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IP Speaker Console</title>
+    <script>
+      // Apply the saved theme before the app loads, so dark mode doesn't flash white first.
+      // The key matches Mantine's localStorage color scheme manager.
+      try {
+        var scheme = localStorage.getItem("mantine-color-scheme-value") || "auto";
+        if (scheme === "auto") {
+          scheme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-mantine-color-scheme", scheme);
+      } catch (error) {
+        // Storage can be unavailable (private browsing); Mantine falls back on its own.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
