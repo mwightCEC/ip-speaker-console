@@ -1,0 +1,74 @@
+/*
+ * Role tokens from "Color Palette Handoff.md". Components use these (--color-*), never palette
+ * values or hex. The palette variables they reference (--blue-500, --dark-surface, …) come from
+ * palette.ts, published by Mantine's cssVariablesResolver.
+ */
+
+/* Light theme */
+:root,
+:root[data-mantine-color-scheme="light"] {
+  --color-canvas: var(--gray-50);
+  --color-surface: var(--gray-0);
+  --color-border: var(--gray-200);
+  --color-text-primary: var(--gray-900);
+  --color-text-body: var(--gray-700);
+  --color-text-secondary: var(--gray-500);
+  --color-text-disabled: var(--gray-400);
+  --color-action-bg: var(--blue-600);
+  --color-action-bg-hover: var(--blue-700);
+  --color-action-text: var(--gray-0);
+  --color-link: var(--blue-700);
+  --color-selected-bg: var(--blue-50);
+  --color-selected-text: var(--blue-700);
+  --color-focus: var(--blue-300);
+
+  --color-success: var(--success-600);
+  --color-warning: var(--warning-600);
+  --color-danger: var(--danger-600);
+  --color-info: var(--blue-600);
+  /* Provisional badge and banner tints; the handoff asks for them but doesn't define values. */
+  --color-success-bg: color-mix(in srgb, var(--color-success) 10%, transparent);
+  --color-warning-bg: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  --color-danger-bg: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  --color-info-bg: var(--blue-50);
+  --color-on-status: var(--gray-0);
+
+  /*
+   * Titlebar: blue-500 is a brand moment and stays blue in both themes. Only the logo, icons and
+   * surface-colored pills sit on it, never small text (white on blue-500 is 4.4:1).
+   */
+  --color-titlebar-bg: var(--blue-500);
+  --color-titlebar-border: var(--blue-500);
+  --color-titlebar-icon: var(--gray-0);
+  --color-titlebar-control-hover: color-mix(in srgb, var(--gray-0) 16%, transparent);
+}
+
+/* Dark theme */
+:root[data-mantine-color-scheme="dark"] {
+  --color-canvas: var(--dark-canvas);
+  --color-surface: var(--dark-surface);
+  --color-border: var(--dark-border);
+  --color-text-primary: var(--dark-text-primary);
+  --color-text-body: var(--dark-text-primary);
+  --color-text-secondary: var(--dark-text-secondary);
+  --color-text-disabled: var(--gray-500);
+  --color-action-bg: var(--dark-action);
+  --color-action-bg-hover: var(--dark-link);
+  --color-action-text: var(--dark-canvas);
+  --color-link: var(--dark-link);
+  --color-selected-bg: color-mix(in srgb, var(--dark-action) 15%, transparent);
+  --color-selected-text: var(--dark-link);
+  --color-focus: var(--blue-300);
+
+  --color-success: var(--dark-success);
+  --color-warning: var(--dark-warning);
+  --color-danger: var(--dark-danger);
+  --color-info: var(--dark-action);
+  --color-success-bg: color-mix(in srgb, var(--color-success) 14%, transparent);
+  --color-warning-bg: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  --color-danger-bg: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  --color-info-bg: var(--color-selected-bg);
+  --color-on-status: var(--dark-canvas);
+
+  /* The titlebar keeps its brand blue in both themes, so its light-theme tokens apply unchanged. */
+}

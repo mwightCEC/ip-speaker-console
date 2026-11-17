@@ -1,0 +1,4 @@
+/* Headings use text-primary; body text uses the slightly softer text-body. */
+.title {
+  color: var(--color-text-primary);
+}

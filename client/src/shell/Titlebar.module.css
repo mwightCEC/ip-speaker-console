@@ -1,0 +1,28 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-sm);
+  padding-inline: var(--mantine-spacing-lg);
+
+  @mixin smaller-than $mantine-breakpoint-xs {
+    padding-inline: var(--mantine-spacing-sm);
+  }
+  background-color: var(--color-titlebar-bg);
+  border-bottom-color: var(--color-titlebar-border);
+}
+
+.logoLink {
+  display: block;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.logo {
+  display: block;
+  height: 18px;
+  width: auto;
+
+  @mixin smaller-than $mantine-breakpoint-xs {
+    height: 14px;
+  }
+}
