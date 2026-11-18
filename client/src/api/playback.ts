@@ -1,15 +1,10 @@
 import type {
   PlaybackState,
   PlayRequest,
-  SoundList,
   VolumeChange,
   VolumeState,
 } from "@ip-speaker-console/shared";
 import { apiRequest } from "./apiRequest";
-
-export function fetchSounds(): Promise<SoundList> {
-  return apiRequest<SoundList>("/sounds");
-}
 
 /** Plays a sound, stopping whatever is playing. Live state arrives over the WebSocket. */
 export function playSound(soundId: string): Promise<PlaybackState> {

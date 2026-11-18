@@ -14,8 +14,9 @@ import { registerRealtime } from "./realtime/websocketHub.js";
 import { registerPlaybackRoutes } from "./playback/playbackRoutes.js";
 import { PlaybackService } from "./playback/playbackService.js";
 import { registerHealthRoutes } from "./routes/health.js";
-import { loadBundledSounds } from "./sounds/soundLibrary.js";
+import { SoundLibrary } from "./sounds/soundLibrary.js";
 import { registerSoundRoutes } from "./sounds/soundRoutes.js";
+import { SoundStore } from "./sounds/soundStore.js";
 import { SettingsStore } from "./settings/settingsStore.js";
 import { openDatabase } from "./storage/database.js";
 import { APP_VERSION } from "./version.js";
@@ -23,6 +24,7 @@ import { registerVolumeRoutes } from "./volume/volumeRoutes.js";
 import { VolumeService } from "./volume/volumeService.js";
 
 const DATABASE_FILE_NAME = "console.db";
+const SOUNDS_DIR_NAME = "sounds";
 
 export interface AppOptions {
   config: ServerConfig;
@@ -30,6 +32,8 @@ export interface AppOptions {
   clientDistDir: string;
   /** Overrides the database location; tests pass IN_MEMORY. Defaults to <dataDir>/console.db. */
   databaseFile?: string;
+  /** Overrides where uploaded sounds are kept. Defaults to <dataDir>/sounds. */
+  soundsDir?: string;
   /** Overrides the driver chosen by `config.audioDriver`; tests pass one they control. */
   audioDriver?: AudioDriver;
   /** Overrides the mixer chosen by `config.audioDriver`. */
@@ -53,6 +57,7 @@ export async function buildApp({
   config,
   clientDistDir,
   databaseFile = path.join(config.dataDir, DATABASE_FILE_NAME),
+  soundsDir = path.join(config.dataDir, SOUNDS_DIR_NAME),
   audioDriver = createAudioDriver(config.audioDriver),
   audioMixer = createAudioMixer(config.audioDriver, config.mixerControl),
   logger = true,
@@ -71,8 +76,16 @@ export async function buildApp({
   );
   app.decorate("activity", activity);
 
-  const library = await loadBundledSounds(app.log);
   const playback = new PlaybackService({ driver: audioDriver, activity, bus });
+  const library = new SoundLibrary({
+    store: new SoundStore(db),
+    uploadsDir: soundsDir,
+    player: playback,
+    activity,
+    bus,
+    log: app.log,
+  });
+  await library.load();
   const volume = new VolumeService({
     mixer: audioMixer,
     settings: new SettingsStore(db),
@@ -95,6 +108,7 @@ export async function buildApp({
     activity,
     playback,
     volume,
+    library,
     serverVersion: APP_VERSION,
     audioDriver: audioDriver.name,
   });

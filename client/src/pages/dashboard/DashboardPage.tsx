@@ -8,8 +8,8 @@ import { pickPlaybackTarget, type SoundSelection } from "./playbackTarget";
 import { QuickPlayCard } from "./QuickPlayCard";
 import { RecentActivityCard } from "./RecentActivityCard";
 import { SpeakerStatusCard } from "./SpeakerStatusCard";
-import { usePlaybackActions } from "./usePlaybackActions";
-import { useSounds } from "./useSounds";
+import { usePlaybackActions } from "../../playback/usePlaybackActions";
+import { useSoundPreview } from "../../playback/useSoundPreview";
 
 export function DashboardPage() {
   const playback = useRealtime((state) => state.playback);
@@ -17,15 +17,12 @@ export function DashboardPage() {
   const recentActivity = useRealtime((state) => state.recentActivity);
   const audioDriver = useRealtime((state) => state.audioDriver);
   const serverVersion = useRealtime((state) => state.serverVersion);
-  const sounds = useSounds();
+  const sounds = useRealtime((state) => state.sounds);
   const [selection, setSelection] = useState<SoundSelection>();
   const { play, stop, pendingSoundId, stopping } = usePlaybackActions();
+  const { previewingId, preview, stopPreview } = useSoundPreview();
 
-  const target = pickPlaybackTarget(
-    selection,
-    playback,
-    sounds.status === "ready" ? sounds.sounds : [],
-  );
+  const target = pickPlaybackTarget(selection, playback, sounds ?? []);
 
   const select = (sound: Sound) => setSelection({ soundId: sound.id, selectedAtMs: Date.now() });
   const selectAndPlay = (sound: Sound) => {
@@ -46,6 +43,9 @@ export function DashboardPage() {
             onStop={() => void stop()}
             starting={target !== undefined && pendingSoundId === target.soundId}
             stopping={stopping}
+            previewing={target !== undefined && previewingId === target.soundId}
+            onPreview={({ soundId, name }) => preview({ id: soundId, name })}
+            onStopPreview={stopPreview}
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
@@ -57,13 +57,16 @@ export function DashboardPage() {
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
           <QuickPlayCard
-            sounds={sounds}
+            sounds={sounds?.filter((sound) => sound.pinned)}
             selectedSoundId={target?.soundId}
             playingSoundId={playback.nowPlaying?.soundId}
             pendingSoundId={pendingSoundId}
             onSelect={select}
             onPlay={selectAndPlay}
             onStop={() => void stop()}
+            previewingSoundId={previewingId}
+            onPreview={preview}
+            onStopPreview={stopPreview}
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>

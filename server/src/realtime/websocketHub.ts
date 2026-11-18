@@ -11,6 +11,7 @@ import type { WebSocket } from "ws";
 import type { ActivityService } from "../activity/activityService.js";
 import type { EventBus } from "../events/eventBus.js";
 import type { PlaybackService } from "../playback/playbackService.js";
+import type { SoundLibrary } from "../sounds/soundLibrary.js";
 import type { VolumeService } from "../volume/volumeService.js";
 
 /** How often to ping clients; one that hasn't answered by the next ping is disconnected. */
@@ -23,6 +24,7 @@ interface RealtimeOptions {
   activity: ActivityService;
   playback: PlaybackService;
   volume: VolumeService;
+  library: SoundLibrary;
   serverVersion: string;
   audioDriver: AudioDriverName;
   heartbeatIntervalMs?: number;
@@ -41,6 +43,7 @@ export async function registerRealtime(
     activity,
     playback,
     volume,
+    library,
     serverVersion,
     audioDriver,
     heartbeatIntervalMs = HEARTBEAT_INTERVAL_MS,
@@ -59,6 +62,7 @@ export async function registerRealtime(
     audioDriver,
     playback: playback.state,
     volume: volume.state,
+    sounds: library.list(),
     recentActivity: activity.list({ limit: SNAPSHOT_ACTIVITY_LIMIT }),
   });
 
@@ -85,6 +89,9 @@ export async function registerRealtime(
     }),
     bus.on("volume.changed", (state) => {
       broadcast(clients, { type: "volume.changed", volume: state });
+    }),
+    bus.on("sounds.changed", (sounds) => {
+      broadcast(clients, { type: "sounds.changed", sounds });
     }),
   ];
 

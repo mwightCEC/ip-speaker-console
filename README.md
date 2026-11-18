@@ -13,8 +13,8 @@ Development follows numbered milestones. Pages that aren't built yet show what's
 | M1        | Workspaces, Fastify server, Vite client, tooling            | Done        |
 | M2        | App shell: titlebar, sidebar, routes, light and dark themes | Done        |
 | M3        | SQLite storage, activity log, WebSocket real-time updates   | Done        |
-| M4        | Audio engine (mock and `aplay`) and Dashboard               | In progress |
-| M5        | Sounds library and WAV uploads                              | Planned     |
+| M4        | Audio engine (mock and `aplay`) and Dashboard               | Done        |
+| M5        | Sounds library and WAV uploads                              | In progress |
 | M6        | Activity page, Settings and reboot                          | Planned     |
 | M7        | Hardware integration on the ROCK Pi S                       | Planned     |
 | M8        | Hardening, deployment and systemd service                   | Planned     |
@@ -78,7 +78,7 @@ The server reads environment variables. To change them during development, copy
 | `LOG_LEVEL`          | `info`        | `fatal`, `error`, `warn`, `info`, `debug` or `trace`                     |
 | `AUDIO_DRIVER`       | `mock`        | `mock` simulates playback; `aplay` plays through ALSA on the device      |
 | `SYSTEM_DRIVER`      | `mock`        | `mock` simulates network and reboot; `linux` uses the real device        |
-| `DATA_DIR`           | `server/data` | Folder for the database (and, from M5, uploaded sounds)                  |
+| `DATA_DIR`           | `server/data` | Folder for the database and uploaded sounds (in `sounds/`)               |
 | `ACTIVITY_RETENTION` | `5000`        | Activity log entries to keep (at least 100); older ones are deleted      |
 | `ALSA_MIXER_CONTROL` | `Master`      | ALSA mixer control the volume slider changes when `AUDIO_DRIVER=aplay`   |
 
@@ -89,7 +89,7 @@ An invalid value stops the server at startup with a message naming the variable.
 ```text
 shared/   Types and constants used by both sides: API shapes, WebSocket messages, activity events
 server/   Fastify API and WebSocket server
-  assets/sounds/  Sample sounds bundled with the console (until the sounds library in M5)
+  assets/sounds/  Built-in sounds shipped with the console
   src/activity/   Activity log: storage, service and GET /api/activity
   src/audio/      Audio drivers (mock and aplay), mixers (mock and amixer), WAV header reader
   src/events/     In-process event bus connecting services to the WebSocket hub
@@ -97,7 +97,8 @@ server/   Fastify API and WebSocket server
   src/playback/   Playback service and /api/playback routes
   src/realtime/   WebSocket hub: snapshot on connect, then live updates
   src/settings/   Settings store (one JSON value per key)
-  src/sounds/     Playable sounds and GET /api/sounds
+  src/sounds/     Sounds library: built-in sounds, uploads, file storage and /api/sounds routes
+  src/testing/    Test helpers: a test app with a temporary data folder, generated WAV files
   src/storage/    SQLite connection and schema migrations
   src/volume/     Volume service and /api/volume routes
 client/   React app (Vite, Mantine)
@@ -105,6 +106,7 @@ client/   React app (Vite, Mantine)
   src/components/ Components shared by several pages
   src/format/     Time and duration formatting
   src/pages/      One component per page; larger pages have a folder of their own parts
+  src/playback/   Play and stop requests shared by the Dashboard and Sounds pages
   src/shell/      Titlebar, sidebar and page layout
   src/realtime/   WebSocket connection, reconnection and live state
   src/theme/      Palette, role color tokens and Mantine theme
@@ -140,10 +142,43 @@ The speaker plays one sound at a time. Playing a sound while another is playing 
 one first, so an urgent announcement never waits. Each start and ending (finished, stopped,
 replaced or failed, with the reason) is recorded as activity.
 
-- `GET /api/sounds` lists the sounds that can be played.
 - `GET /api/playback` returns what's playing and how the last sound ended.
 - `POST /api/playback` with `{ "soundId": "chime" }` plays a sound.
 - `POST /api/playback/stop` stops it.
+
+The audio driver does the playing. `mock` waits for as long as the sound lasts without making a
+noise, so everything works on a development machine; `aplay` runs ALSA's `aplay` on the device.
+Sounds must be uncompressed (PCM) WAV files; their length comes from the WAV header.
+
+### Sounds library
+
+The library holds the built-in sounds (a 1 kHz test tone, a chime and an alert, generated for the
+console) and the WAV files people upload. Built-in sounds live in `server/assets/sounds`, so a
+production install needs that folder next to `server/dist`. They can be played, downloaded and
+pinned, but not renamed or deleted. They start out pinned.
+
+Uploads are checked on the server as they arrive: at most 10 MB, a real RIFF/WAVE file, and
+uncompressed audio. A refused file gets a reason written for people, such as "This is an MP3
+file, not a WAV file", and is recorded as activity. Accepted files are stored as
+`<DATA_DIR>/sounds/<id>.wav` under a generated ID; names, pins and file details live in the
+database. A name typed by a person is never used as a file path, so renaming never touches the
+file. At startup the server drops sounds whose file has gone and deletes files left behind by an
+interrupted upload.
+
+Pinned sounds appear in the Dashboard's Quick play list. Deleting a sound that's playing stops it
+first, and deleting a pinned sound removes it from Quick play.
+
+- `GET /api/sounds` lists every sound: built-in ones first, then uploads by name.
+- `POST /api/sounds` uploads a WAV file sent as a form upload in the `file` field.
+- `PATCH /api/sounds/:id` with `{ "name": "Front door" }`, `{ "pinned": true }` or both.
+- `DELETE /api/sounds/:id` deletes an uploaded sound and its file.
+- `GET /api/sounds/:id/file` sends the WAV file, honouring `Range` requests so browsers can
+  stream and seek it; add `?download=true` to save it under the sound's name.
+
+The Sounds page shows the library in one card, as tiles or as a list; the button in the card's
+header switches between them, and each browser remembers the choice. It accepts files dragged
+onto it as well as the Upload button. Preview buttons, on the Sounds page and next to Play on the
+Dashboard, play a sound in the browser without touching the speaker.
 
 ### Volume
 
@@ -161,21 +196,15 @@ The Dashboard's slider sends a change once it has been still for a moment, so dr
 holding an arrow key makes one change rather than dozens. The speaker icon next to it mutes and
 unmutes (red while muted), and moving the slider while muted unmutes.
 
-The audio driver does the playing. `mock` waits for as long as the sound lasts without making a
-noise, so everything works on a development machine; `aplay` runs ALSA's `aplay` on the device.
-Sounds must be uncompressed (PCM) WAV files; their length comes from the WAV header.
-
-Until the sounds library arrives in M5, the console plays three sample sounds generated for it
-(a 1 kHz test tone, a chime and an alert) from `server/assets/sounds`. A production install needs
-that folder next to `server/dist`.
-
 ### Real-time updates
 
 Browsers keep a WebSocket open to `/ws`. On every connection, including reconnects, the server
 first sends a `snapshot` message with the current state, then a message for each change:
-`activity.created` for a new event, `playback.changed` when playback starts or ends, and
-`volume.changed` when the volume changes. Because each connection starts from a full snapshot, a browser that was
-disconnected during a reboot or network outage is up to date as soon as it reconnects.
+`activity.created` for a new event, `playback.changed` when playback starts or ends,
+`volume.changed` when the volume changes, and `sounds.changed` with the whole list when a sound is
+added, renamed, pinned, unpinned or deleted. Because each connection starts from a full snapshot,
+a browser that was disconnected during a reboot or network outage is up to date as soon as it
+reconnects.
 
 The browser reconnects automatically with increasing delays (1 s, 2 s, 4 s … up to 30 s) and
 straight away when the network comes back. Connection changes are logged to the browser console

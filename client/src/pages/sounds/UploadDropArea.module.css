@@ -1,0 +1,16 @@
+.area {
+  position: relative;
+  min-height: 200px;
+}
+
+/* Covers the cards while files are dragged over them. */
+.overlay {
+  position: absolute;
+  inset: calc(var(--mantine-spacing-xs) * -1);
+  z-index: 1;
+  border: 2px dashed var(--color-selected-text);
+  border-radius: var(--mantine-radius-md);
+  background-color: color-mix(in srgb, var(--color-selected-bg) 92%, transparent);
+  color: var(--color-selected-text);
+  pointer-events: none;
+}

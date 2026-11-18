@@ -37,6 +37,7 @@ describe("applyServerMessage", () => {
       audioDriver: "mock",
       playback: {},
       volume: { percent: 70, muted: false },
+      sounds: [],
       recentActivity: [activity(3), activity(2)],
     });
 
@@ -87,6 +88,11 @@ describe("applyServerMessage", () => {
       volume: { percent: 25, muted: true },
     });
     expect(next.volume).toEqual({ percent: 25, muted: true });
+  });
+
+  it("follows sound library changes", () => {
+    const next = applyServerMessage(INITIAL_STATE, { type: "sounds.changed", sounds: [] });
+    expect(next.sounds).toEqual([]);
   });
 
   it("adds new activity to the front", () => {

@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { ActivityEvent, PlaybackState, VolumeState } from "@ip-speaker-console/shared";
+import type { ActivityEvent, PlaybackState, Sound, VolumeState } from "@ip-speaker-console/shared";
 import type { FastifyBaseLogger } from "fastify";
 
 /**
@@ -13,6 +13,8 @@ export interface ServerEvents {
   "playback.changed": PlaybackState;
   /** The volume changed. */
   "volume.changed": VolumeState;
+  /** The sound library changed. Carries every sound, in display order. */
+  "sounds.changed": Sound[];
 }
 
 type Listener<K extends keyof ServerEvents> = (payload: ServerEvents[K]) => void;

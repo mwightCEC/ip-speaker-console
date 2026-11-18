@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWavHeader, WavFormatError } from "./wav.js";
+import { parseWavHeader } from "./wav.js";
 
 interface TestWav {
   formatTag?: number;
@@ -76,7 +76,20 @@ describe("parseWavHeader", () => {
   });
 
   it("rejects files that aren't WAV", () => {
-    expect(() => parseWavHeader(Buffer.from("ID3 not a wav file"))).toThrow(WavFormatError);
+    expect(() => parseWavHeader(Buffer.from("plain text, not audio"))).toThrow(
+      "This isn't a WAV file.",
+    );
+  });
+
+  it.each([
+    ["ID3\u0004\u0000 tagged audio", "an MP3"],
+    ["OggS\u0000 audio", "an Ogg"],
+    ["fLaC audio", "a FLAC"],
+    ["\u0000\u0000\u0000 ftypM4A ", "an M4A or MP4"],
+  ])("says what kind of audio file %j is", (bytes, kind) => {
+    expect(() => parseWavHeader(Buffer.from(bytes, "latin1"))).toThrow(
+      `This is ${kind} file, not a WAV file.`,
+    );
   });
 
   it("rejects compressed audio with a message saying what to do", () => {

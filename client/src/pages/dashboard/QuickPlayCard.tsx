@@ -1,30 +1,36 @@
 import type { Sound } from "@ip-speaker-console/shared";
-import { ActionIcon, Alert, Button, Skeleton, Stack, Text, UnstyledButton } from "@mantine/core";
-import { IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-react";
+import { Anchor, Group, Skeleton, Stack, Text, UnstyledButton } from "@mantine/core";
 import { formatFileSize, formatSoundFormat } from "../../format/sound";
 import { formatDuration } from "../../format/time";
+import { PlayButton, PreviewButton } from "../../playback/SoundButtons";
 import { DashboardCard } from "./DashboardCard";
 import classes from "./QuickPlayCard.module.css";
-import type { useSounds } from "./useSounds";
+import { Link } from "react-router";
 
 interface QuickPlayCardProps {
-  sounds: ReturnType<typeof useSounds>;
+  /** The pinned sounds; undefined until the speaker has sent them. */
+  sounds: Sound[] | undefined;
   selectedSoundId: string | undefined;
   playingSoundId: string | undefined;
   pendingSoundId: string | undefined;
+  /** The sound being previewed in this browser. */
+  previewingSoundId: string | undefined;
   onSelect: (sound: Sound) => void;
   onPlay: (sound: Sound) => void;
   onStop: () => void;
+  onPreview: (sound: Sound) => void;
+  onStopPreview: () => void;
 }
 
 /**
- * Every sound, one per row with its file details. Clicking a row selects it into the Playback
- * card; its Play button selects it and plays it straight away.
+ * The sounds pinned on the Sounds page, one per row with its file details. Clicking a row selects it into the Playback
+ * card; its Play button selects it and plays it straight away, and Preview plays it in this
+ * browser only.
  */
 export function QuickPlayCard({ sounds, ...rowProps }: QuickPlayCardProps) {
   return (
     <DashboardCard title="Quick play">
-      {sounds.status === "loading" && (
+      {sounds === undefined && (
         <Stack gap="xs">
           {[1, 2, 3].map((key) => (
             <Skeleton key={key} h={52} />
@@ -32,24 +38,19 @@ export function QuickPlayCard({ sounds, ...rowProps }: QuickPlayCardProps) {
         </Stack>
       )}
 
-      {sounds.status === "error" && (
-        <Alert color="danger" title="Couldn't load the sounds">
-          <Text size="sm" mb="sm">
-            {sounds.message}
-          </Text>
-          <Button size="xs" variant="light" color="danger" onClick={sounds.retry}>
-            Try again
-          </Button>
-        </Alert>
+      {sounds?.length === 0 && (
+        <Text>
+          No sounds are pinned. Pin the ones you play most on the{" "}
+          <Anchor component={Link} to="/sounds">
+            Sounds page
+          </Anchor>{" "}
+          to play them from here.
+        </Text>
       )}
 
-      {sounds.status === "ready" && sounds.sounds.length === 0 && (
-        <Text>There are no sounds on the speaker yet.</Text>
-      )}
-
-      {sounds.status === "ready" && sounds.sounds.length > 0 && (
+      {sounds !== undefined && sounds.length > 0 && (
         <ul className={classes.list}>
-          {sounds.sounds.map((sound) => (
+          {sounds.map((sound) => (
             <SoundRow key={sound.id} sound={sound} {...rowProps} />
           ))}
         </ul>
@@ -65,9 +66,12 @@ function SoundRow({
   selectedSoundId,
   playingSoundId,
   pendingSoundId,
+  previewingSoundId,
   onSelect,
   onPlay,
   onStop,
+  onPreview,
+  onStopPreview,
 }: SoundRowProps) {
   const selected = sound.id === selectedSoundId;
   const playing = sound.id === playingSoundId;
@@ -89,27 +93,23 @@ function SoundRow({
       <Text size="sm" c="dimmed" className={classes.duration}>
         {formatDuration(sound.durationMs)}
       </Text>
-      {playing ? (
-        <ActionIcon
-          variant="light"
-          color="danger"
-          size="lg"
-          aria-label={`Stop ${sound.name}`}
-          onClick={onStop}
-        >
-          <IconPlayerStopFilled size={16} aria-hidden />
-        </ActionIcon>
-      ) : (
-        <ActionIcon
-          variant="light"
-          size="lg"
-          aria-label={`Play ${sound.name}`}
-          loading={sound.id === pendingSoundId}
-          onClick={() => onPlay(sound)}
-        >
-          <IconPlayerPlayFilled size={16} aria-hidden />
-        </ActionIcon>
-      )}
+      <Group gap="xs" wrap="nowrap">
+        <PreviewButton
+          size="icon"
+          name={sound.name}
+          previewing={sound.id === previewingSoundId}
+          onPreview={() => onPreview(sound)}
+          onStopPreview={onStopPreview}
+        />
+        <PlayButton
+          size="icon"
+          name={sound.name}
+          playing={playing}
+          starting={sound.id === pendingSoundId}
+          onPlay={() => onPlay(sound)}
+          onStop={onStop}
+        />
+      </Group>
     </li>
   );
 }

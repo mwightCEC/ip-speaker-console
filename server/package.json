@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/multipart": "^10.1.9",
     "@fastify/static": "^10.1.11",
     "@fastify/websocket": "^11.3.7",
     "@ip-speaker-console/shared": "0.1.0",

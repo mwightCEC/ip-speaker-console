@@ -2,9 +2,7 @@ import type { ServerMessage } from "@ip-speaker-console/shared";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { WebSocket } from "ws";
-import { buildApp } from "../app.js";
-import { loadConfig } from "../config.js";
-import { IN_MEMORY } from "../storage/database.js";
+import { buildTestApp } from "../testing/buildTestApp.js";
 
 interface TestClient {
   socket: WebSocket;
@@ -48,12 +46,7 @@ describe("WebSocket hub", () => {
   let app: FastifyInstance;
 
   beforeEach(async () => {
-    app = await buildApp({
-      config: loadConfig({}),
-      clientDistDir: "/nonexistent",
-      databaseFile: IN_MEMORY,
-      logger: false,
-    });
+    app = await buildTestApp();
     await app.ready();
   });
 
@@ -70,6 +63,8 @@ describe("WebSocket hub", () => {
       serverVersion: expect.stringMatching(/^\d+\.\d+\.\d+/),
       audioDriver: "mock",
       playback: {},
+      volume: { percent: 80, muted: false },
+      sounds: [{ id: "test-tone" }, { id: "chime" }, { id: "alert" }],
       recentActivity: [{ message: "Console started" }],
     });
     client.socket.terminate();
@@ -89,6 +84,24 @@ describe("WebSocket hub", () => {
       type: "playback.changed",
       playback: { nowPlaying: { soundId: "chime", durationMs: 2200 } },
     });
+    client.socket.terminate();
+  });
+
+  it("pushes sound library changes to every connected client", async () => {
+    const client = await connect(app);
+    await client.next();
+
+    await app.inject({ method: "PATCH", url: "/api/sounds/chime", payload: { pinned: false } });
+
+    expect(await client.next()).toMatchObject({
+      type: "activity.created",
+      event: { message: "Unpinned Chime from Quick play" },
+    });
+    const message = await client.next();
+    expect(message.type).toBe("sounds.changed");
+    expect(
+      message.type === "sounds.changed" && message.sounds.find(({ id }) => id === "chime"),
+    ).toMatchObject({ pinned: false });
     client.socket.terminate();
   });
 

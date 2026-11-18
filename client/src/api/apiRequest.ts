@@ -17,22 +17,20 @@ const UNREACHABLE_MESSAGE =
   "Couldn't reach the speaker. Check that it's powered on and on the same network.";
 
 /**
- * Calls the console's API and returns the parsed JSON body. Throws ApiRequestError with the
+ * Calls the console's API and returns the parsed JSON body (undefined for an empty one). A
+ * FormData body is sent as a form upload, anything else as JSON. Throws ApiRequestError with the
  * server's message when the request fails, or a general one when the speaker can't be reached.
  */
 export async function apiRequest<T>(
   path: string,
-  { method = "GET", body }: { method?: "GET" | "POST" | "PUT"; body?: unknown } = {},
+  {
+    method = "GET",
+    body,
+  }: { method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown } = {},
 ): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_PREFIX}${path}`, {
-      method,
-      ...(body !== undefined && {
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }),
-    });
+    response = await fetch(`${API_PREFIX}${path}`, { method, ...encodeBody(body) });
   } catch {
     throw new ApiRequestError(0, "unreachable", UNREACHABLE_MESSAGE);
   }
@@ -47,4 +45,15 @@ export async function apiRequest<T>(
     );
   }
   return data as T;
+}
+
+function encodeBody(body: unknown): RequestInit {
+  if (body === undefined) {
+    return {};
+  }
+  if (body instanceof FormData) {
+    // The browser sets the multipart Content-Type, including its boundary.
+    return { body };
+  }
+  return { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
 }

@@ -37,6 +37,9 @@ function testSound(id: string, name: string, durationMs: number): LibrarySound {
     fileName: `${id}.wav`,
     sizeBytes: 1000,
     format: { sampleRate: 22_050, channels: 1, bitsPerSample: 16 },
+    builtIn: false,
+    pinned: false,
+    addedAt: "2026-11-18T10:00:00.000Z",
     file: `${id}.wav`,
   };
 }
@@ -122,6 +125,14 @@ describe("PlaybackService", () => {
 
     expect(state.nowPlaying).toBeUndefined();
     expect(state.lastResult?.ending).toBe("stopped");
+    expect(messages()).toEqual(["Started playing Chime", "Stopped Chime"]);
+  });
+
+  it("stops a particular sound only if it's the one playing", async () => {
+    await service.play(CHIME);
+
+    expect((await service.stopSound("alert")).nowPlaying?.soundId).toBe("chime");
+    expect((await service.stopSound("chime")).nowPlaying).toBeUndefined();
     expect(messages()).toEqual(["Started playing Chime", "Stopped Chime"]);
   });
 
