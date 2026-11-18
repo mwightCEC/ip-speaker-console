@@ -3,7 +3,7 @@ import { Alert, Divider, Group, Progress, Stack, Text } from "@mantine/core";
 import { formatDuration } from "../../format/time";
 import { PlayButton, PreviewButton } from "../../playback/SoundButtons";
 import type { LivePlayback } from "../../realtime/realtimeState";
-import { DashboardCard } from "./DashboardCard";
+import { SectionCard } from "../../components/SectionCard";
 import type { PlaybackTarget } from "./playbackTarget";
 import { usePlaybackProgress } from "./usePlaybackProgress";
 import classes from "./PlaybackCard.module.css";
@@ -33,7 +33,7 @@ export function PlaybackCard(props: PlaybackCardProps) {
   const { target, volume } = props;
 
   return (
-    <DashboardCard title="Playback">
+    <SectionCard title="Playback">
       {target ? (
         <SelectedSound {...props} target={target} />
       ) : (
@@ -41,7 +41,7 @@ export function PlaybackCard(props: PlaybackCardProps) {
       )}
       <Divider />
       <VolumeControl volume={volume} />
-    </DashboardCard>
+    </SectionCard>
   );
 }
 

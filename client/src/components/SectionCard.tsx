@@ -1,15 +1,15 @@
 import { Card, Group, Stack, Title } from "@mantine/core";
 import { useId, type ReactNode } from "react";
 
-interface DashboardCardProps {
+interface SectionCardProps {
   title: string;
   /** Shown at the right of the title, such as a "View all" link. */
   action?: ReactNode;
   children: ReactNode;
 }
 
-/** One titled panel on the Dashboard, marked up as a labelled section. */
-export function DashboardCard({ title, action, children }: DashboardCardProps) {
+/** A titled panel on a page, marked up as a labelled section. */
+export function SectionCard({ title, action, children }: SectionCardProps) {
   const titleId = useId();
 
   return (

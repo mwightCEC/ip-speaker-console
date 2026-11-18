@@ -1,6 +1,7 @@
 import { Group, Stack, Text, Title } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import type { ReactNode } from "react";
+import { useRealtime } from "../realtime/useRealtime";
 
 interface PageHeaderProps {
   title: string;
@@ -11,9 +12,13 @@ interface PageHeaderProps {
 
 const APP_NAME = "IP Speaker Console";
 
-/** Page title and optional one-line description. Also sets the browser tab title. */
+/**
+ * Page title and optional one-line description. Also sets the browser tab title, with the
+ * device's name so several speakers' tabs can be told apart.
+ */
 export function PageHeader({ title, description, action }: PageHeaderProps) {
-  useDocumentTitle(`${title} · ${APP_NAME}`);
+  const deviceName = useRealtime((state) => state.settings?.deviceName);
+  useDocumentTitle(`${title} · ${deviceName ?? APP_NAME}`);
 
   return (
     <Group justify="space-between" align="flex-end" gap="md">

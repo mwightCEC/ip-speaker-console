@@ -8,6 +8,11 @@ export const WS_PATH = "/ws";
 export interface HealthResponse {
   status: "ok";
   version: string;
+  /**
+   * Changes every time the console starts, including after a reboot. The reboot screen waits
+   * for it to change to know the device has come back.
+   */
+  bootId: string;
   /** Seconds since the server process started. */
   uptimeSeconds: number;
   drivers: {

@@ -34,7 +34,9 @@ describe("applyServerMessage", () => {
     const next = applyServerMessage(stale, {
       type: "snapshot",
       serverVersion: "0.1.0",
+      bootId: "boot-1",
       audioDriver: "mock",
+      settings: { deviceName: "Lobby", timeZone: "UTC" },
       playback: {},
       volume: { percent: 70, muted: false },
       sounds: [],
@@ -88,6 +90,17 @@ describe("applyServerMessage", () => {
       volume: { percent: 25, muted: true },
     });
     expect(next.volume).toEqual({ percent: 25, muted: true });
+  });
+
+  it("follows settings changes and hears about a reboot", () => {
+    const renamed = applyServerMessage(INITIAL_STATE, {
+      type: "settings.changed",
+      settings: { deviceName: "Lobby", timeZone: "Asia/Tokyo" },
+    });
+    expect(renamed.settings?.deviceName).toBe("Lobby");
+
+    const rebooting = applyServerMessage(renamed, { type: "device.rebooting", bootId: "boot-1" });
+    expect(rebooting.rebootingFrom).toBe("boot-1");
   });
 
   it("follows sound library changes", () => {

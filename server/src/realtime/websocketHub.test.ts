@@ -63,7 +63,9 @@ describe("WebSocket hub", () => {
       serverVersion: expect.stringMatching(/^\d+\.\d+\.\d+/),
       audioDriver: "mock",
       playback: {},
+      bootId: expect.any(String),
       volume: { percent: 80, muted: false },
+      settings: { deviceName: "IP Speaker", timeZone: expect.any(String) },
       sounds: [{ id: "test-tone" }, { id: "chime" }, { id: "alert" }],
       recentActivity: [{ message: "Console started" }],
     });
@@ -103,6 +105,40 @@ describe("WebSocket hub", () => {
       message.type === "sounds.changed" && message.sounds.find(({ id }) => id === "chime"),
     ).toMatchObject({ pinned: false });
     client.socket.terminate();
+  });
+
+  it("tells every client when the device starts rebooting", async () => {
+    const client = await connect(app);
+    const snapshot = await client.next();
+
+    await app.inject({ method: "POST", url: "/api/device/reboot" });
+
+    const messages = [await client.next(), await client.next()];
+    expect(messages).toContainEqual({
+      type: "device.rebooting",
+      bootId: snapshot.type === "snapshot" ? snapshot.bootId : "",
+    });
+    client.socket.terminate();
+  });
+
+  it("pushes settings changes to every connected client", async () => {
+    const client = await connect(app);
+    await client.next();
+
+    await app.inject({ method: "PATCH", url: "/api/settings", payload: { deviceName: "Lobby" } });
+
+    const messages = [await client.next(), await client.next()];
+    expect(messages).toContainEqual({
+      type: "settings.changed",
+      settings: expect.objectContaining({ deviceName: "Lobby" }),
+    });
+    client.socket.terminate();
+  });
+
+  it("refuses connections from other websites", async () => {
+    await expect(
+      app.injectWS("/ws", { headers: { host: "speaker.local", origin: "https://evil.example" } }),
+    ).rejects.toThrow(/403/u);
   });
 
   it("pushes new activity to every connected client", async () => {

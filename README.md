@@ -14,8 +14,8 @@ Development follows numbered milestones. Pages that aren't built yet show what's
 | M2        | App shell: titlebar, sidebar, routes, light and dark themes | Done        |
 | M3        | SQLite storage, activity log, WebSocket real-time updates   | Done        |
 | M4        | Audio engine (mock and `aplay`) and Dashboard               | Done        |
-| M5        | Sounds library and WAV uploads                              | In progress |
-| M6        | Activity page, Settings and reboot                          | Planned     |
+| M5        | Sounds library and WAV uploads                              | Done        |
+| M6        | Activity page, Settings and reboot                          | In progress |
 | M7        | Hardware integration on the ROCK Pi S                       | Planned     |
 | M8        | Hardening, deployment and systemd service                   | Planned     |
 
@@ -77,7 +77,7 @@ The server reads environment variables. To change them during development, copy
 | `PORT`               | `3000`        | Port to listen on                                                        |
 | `LOG_LEVEL`          | `info`        | `fatal`, `error`, `warn`, `info`, `debug` or `trace`                     |
 | `AUDIO_DRIVER`       | `mock`        | `mock` simulates playback; `aplay` plays through ALSA on the device      |
-| `SYSTEM_DRIVER`      | `mock`        | `mock` simulates network and reboot; `linux` uses the real device        |
+| `SYSTEM_DRIVER`      | `mock`        | `mock` simulates time zone and reboot; `linux` arrives in M7             |
 | `DATA_DIR`           | `server/data` | Folder for the database and uploaded sounds (in `sounds/`)               |
 | `ACTIVITY_RETENTION` | `5000`        | Activity log entries to keep (at least 100); older ones are deleted      |
 | `ALSA_MIXER_CONTROL` | `Master`      | ALSA mixer control the volume slider changes when `AUDIO_DRIVER=aplay`   |
@@ -93,21 +93,23 @@ server/   Fastify API and WebSocket server
   src/activity/   Activity log: storage, service and GET /api/activity
   src/audio/      Audio drivers (mock and aplay), mixers (mock and amixer), WAV header reader
   src/events/     In-process event bus connecting services to the WebSocket hub
-  src/http/       API error handling
+  src/http/       API error handling and the same-origin check
   src/playback/   Playback service and /api/playback routes
   src/realtime/   WebSocket hub: snapshot on connect, then live updates
-  src/settings/   Settings store (one JSON value per key)
+  src/settings/   Settings store (one JSON value per key); device name and time zone
   src/sounds/     Sounds library: built-in sounds, uploads, file storage and /api/sounds routes
   src/testing/    Test helpers: a test app with a temporary data folder, generated WAV files
   src/storage/    SQLite connection and schema migrations
+  src/system/     System drivers, device information, reboot (simulated by the mock driver)
+  src/text/       Rules for names people type
   src/volume/     Volume service and /api/volume routes
 client/   React app (Vite, Mantine)
   src/api/        REST calls and API error handling
   src/components/ Components shared by several pages
-  src/format/     Time and duration formatting
+  src/format/     Time, duration, sound and audio formatting
   src/pages/      One component per page; larger pages have a folder of their own parts
   src/playback/   Play and stop requests shared by the Dashboard and Sounds pages
-  src/shell/      Titlebar, sidebar and page layout
+  src/shell/      Titlebar, sidebar, page layout and the reboot screen
   src/realtime/   WebSocket connection, reconnection and live state
   src/theme/      Palette, role color tokens and Mantine theme
 ```
@@ -135,6 +137,11 @@ stored, written to the server log, and pushed to connected browsers. Only the ne
 default 50), `before` (an event ID, for the next page), `category` (`playback`, `files`,
 `settings` or `device`) and `outcome` (`success`, `warning`, `failure` or `info`). The response
 includes `nextBefore` when there are older events.
+
+The Activity page lists every event with filters for category and outcome. The filters live in
+the address (such as `/activity?outcome=failure`), so a filtered view can be bookmarked. New
+events appear at the top as they happen, and "Load older activity" pages back through the rest.
+Times are shown in the device's time zone.
 
 ### Playback
 
@@ -196,13 +203,49 @@ The Dashboard's slider sends a change once it has been still for a moment, so dr
 holding an arrow key makes one change rather than dozens. The speaker icon next to it mutes and
 unmutes (red while muted), and moving the slider while muted unmutes.
 
+### Settings and device
+
+The Settings page changes the device name (shown in the browser tab) and time zone,
+lists device information (model, software version, hostname, uptime and the network connection,
+such as "Ethernet · DHCP") and reboots the device. The mock system driver reads the connection
+type from this computer's network interfaces and always reports DHCP.
+
+The time zone is the device's own: the system driver applies it (with `timedatectl` on the
+board, from M7), and times in the console follow it. Both settings are saved in the database,
+recorded as activity and pushed to every browser as a `settings.changed` message.
+
+- `GET /api/settings` returns `{ "deviceName": "IP Speaker", "timeZone": "America/Chicago" }`.
+- `PATCH /api/settings` with `{ "deviceName": "Lobby speaker" }`, `{ "timeZone": "UTC" }` or both.
+- `GET /api/device` returns the device information.
+- `POST /api/device/reboot` answers 202 with `{ "bootId": "…" }` and reboots shortly after.
+
+### Rebooting
+
+Every start of the console gets a new boot ID, reported by `/api/health` and the WebSocket
+snapshot. A reboot tells every open browser with a `device.rebooting` message, stops playback,
+then asks the system driver to reboot. Each browser shows a reboot screen and checks every second
+until the device answers with a new boot ID, then reloads. After 3 minutes it says the device
+hasn't come back, and keeps checking.
+
+With the mock system driver the reboot is simulated: for 20 seconds the API and WebSocket answer
+503, as if the device were off, then the console comes back as a new boot. Nothing is restarted.
+
+### Same-origin check
+
+Browsers send an `Origin` header with requests a page makes. The server refuses changes (POST,
+PUT, PATCH, DELETE) and WebSocket connections whose `Origin` doesn't match the address they
+were sent to, so a web page someone visits can't play sounds or reboot the speaker through their
+browser. Requests without an `Origin`, such as from curl, are allowed. This isn't a login:
+anyone who can reach the console can use it.
+
 ### Real-time updates
 
 Browsers keep a WebSocket open to `/ws`. On every connection, including reconnects, the server
 first sends a `snapshot` message with the current state, then a message for each change:
 `activity.created` for a new event, `playback.changed` when playback starts or ends,
-`volume.changed` when the volume changes, and `sounds.changed` with the whole list when a sound is
-added, renamed, pinned, unpinned or deleted. Because each connection starts from a full snapshot,
+`volume.changed` when the volume changes, `sounds.changed` with the whole list when a sound is
+added, renamed, pinned, unpinned or deleted, `settings.changed` when the device name or time zone
+changes, and `device.rebooting` when a reboot starts. Because each connection starts from a full snapshot,
 a browser that was disconnected during a reboot or network outage is up to date as soon as it
 reconnects.
 

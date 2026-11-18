@@ -1,0 +1,7 @@
+/*
+ * Mantine makes one container per screen position and these styles reach all of them, so only
+ * the top-right one moves: it sits just below the titlebar instead of covering the theme toggle.
+ */
+.root[data-position="top-right"] {
+  top: calc(var(--titlebar-height) + var(--mantine-spacing-md));
+}

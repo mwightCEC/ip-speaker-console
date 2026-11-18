@@ -2,6 +2,7 @@ import {
   SNAPSHOT_ACTIVITY_LIMIT,
   type ActivityEvent,
   type AudioDriverName,
+  type DeviceSettings,
   type NowPlaying,
   type PlaybackResult,
   type PlaybackState,
@@ -36,8 +37,17 @@ export interface RealtimeState {
   status: ConnectionStatus;
   /** Set once the first snapshot arrives. */
   serverVersion?: string;
+  /** Changes every time the device starts. Set once the first snapshot arrives. */
+  bootId?: string;
   /** Set once the first snapshot arrives. */
   audioDriver?: AudioDriverName;
+  /** Device name and time zone. Set once the first snapshot arrives. */
+  settings?: DeviceSettings;
+  /**
+   * Someone started a reboot; holds the boot that's ending. The reboot screen shows until the
+   * page reloads on the device's new boot.
+   */
+  rebootingFrom?: string;
   playback: LivePlayback;
   /** Set once the first snapshot arrives. */
   volume?: VolumeState;
@@ -68,6 +78,8 @@ export function applyServerMessage(
       return {
         ...state,
         serverVersion: message.serverVersion,
+        bootId: message.bootId,
+        settings: message.settings,
         audioDriver: message.audioDriver,
         playback: toLivePlayback(message.playback, state.playback, receivedAtMs),
         volume: message.volume,
@@ -80,6 +92,10 @@ export function applyServerMessage(
       return { ...state, volume: message.volume };
     case "sounds.changed":
       return { ...state, sounds: message.sounds };
+    case "settings.changed":
+      return { ...state, settings: message.settings };
+    case "device.rebooting":
+      return { ...state, rebootingFrom: message.bootId };
     case "activity.created": {
       if (state.recentActivity.some((event) => event.id === message.event.id)) {
         return state;

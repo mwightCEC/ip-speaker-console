@@ -10,6 +10,8 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
 import { realtimeClient } from "./realtime/useRealtime";
 import { router } from "./router";
+import { TITLEBAR_HEIGHT } from "./shell/layout";
+import notificationClasses from "./shell/Notifications.module.css";
 import { cssVariablesResolver } from "./theme/cssVariablesResolver";
 import { theme } from "./theme/theme";
 
@@ -27,7 +29,11 @@ createRoot(rootElement).render(
       cssVariablesResolver={cssVariablesResolver}
       defaultColorScheme="auto"
     >
-      <Notifications position="bottom-right" />
+      <Notifications
+        position="top-right"
+        classNames={{ root: notificationClasses.root }}
+        style={{ "--titlebar-height": `${TITLEBAR_HEIGHT}px` }}
+      />
       <RouterProvider router={router} />
     </MantineProvider>
   </StrictMode>,
