@@ -3,7 +3,7 @@ import { Anchor, Group, Skeleton, Stack, Text, UnstyledButton } from "@mantine/c
 import { formatFileSize, formatSoundFormat } from "../../format/sound";
 import { formatDuration } from "../../format/time";
 import { PlayButton, PreviewButton } from "../../playback/SoundButtons";
-import { DashboardCard } from "./DashboardCard";
+import { SectionCard } from "../../components/SectionCard";
 import classes from "./QuickPlayCard.module.css";
 import { Link } from "react-router";
 
@@ -29,7 +29,7 @@ interface QuickPlayCardProps {
  */
 export function QuickPlayCard({ sounds, ...rowProps }: QuickPlayCardProps) {
   return (
-    <DashboardCard title="Quick play">
+    <SectionCard title="Quick play">
       {sounds === undefined && (
         <Stack gap="xs">
           {[1, 2, 3].map((key) => (
@@ -55,7 +55,7 @@ export function QuickPlayCard({ sounds, ...rowProps }: QuickPlayCardProps) {
           ))}
         </ul>
       )}
-    </DashboardCard>
+    </SectionCard>
   );
 }
 

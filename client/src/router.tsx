@@ -1,8 +1,8 @@
 import { createBrowserRouter } from "react-router";
-import { ActivityPage } from "./pages/ActivityPage";
+import { ActivityPage } from "./pages/activity/ActivityPage";
 import { DashboardPage } from "./pages/dashboard/DashboardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { SettingsPage } from "./pages/SettingsPage";
+import { SettingsPage } from "./pages/settings/SettingsPage";
 import { SoundsPage } from "./pages/sounds/SoundsPage";
 import { AppLayout } from "./shell/AppLayout";
 

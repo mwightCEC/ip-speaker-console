@@ -1,0 +1,15 @@
+.item {
+  padding-block: var(--mantine-spacing-xs);
+  border-top: 1px solid var(--color-border);
+}
+
+.item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* The badge and time keep their width; the message wraps instead. */
+.meta {
+  flex-shrink: 0;
+  text-align: right;
+}

@@ -1,6 +1,8 @@
 import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Outlet } from "react-router";
+import { TITLEBAR_HEIGHT } from "./layout";
+import { RebootScreen } from "./RebootScreen";
 import { Sidebar } from "./Sidebar";
 import { Titlebar } from "./Titlebar";
 
@@ -10,7 +12,7 @@ export function AppLayout() {
 
   return (
     <AppShell
-      header={{ height: 64 }}
+      header={{ height: TITLEBAR_HEIGHT }}
       navbar={{ width: 220, breakpoint: "sm", collapsed: { mobile: !navOpened } }}
       padding="lg"
     >
@@ -19,6 +21,7 @@ export function AppLayout() {
       <AppShell.Main>
         <Outlet />
       </AppShell.Main>
+      <RebootScreen />
     </AppShell>
   );
 }

@@ -45,6 +45,14 @@ export class RealtimeClient {
 
   getState = (): RealtimeState => this.#state;
 
+  /**
+   * Shows the reboot screen for a reboot this page started, in case the WebSocket drops before
+   * the server's own "device.rebooting" message arrives.
+   */
+  markRebooting(bootId: string): void {
+    this.#update(applyServerMessage(this.#state, { type: "device.rebooting", bootId }));
+  }
+
   subscribe = (listener: Listener): (() => void) => {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);

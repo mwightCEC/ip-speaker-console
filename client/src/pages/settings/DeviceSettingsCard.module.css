@@ -1,0 +1,4 @@
+/* The time zone field works like a dropdown, so it shows a pointer rather than a text cursor. */
+.timeZoneInput {
+  cursor: pointer;
+}

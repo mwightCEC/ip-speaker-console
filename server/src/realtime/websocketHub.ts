@@ -11,7 +11,9 @@ import type { WebSocket } from "ws";
 import type { ActivityService } from "../activity/activityService.js";
 import type { EventBus } from "../events/eventBus.js";
 import type { PlaybackService } from "../playback/playbackService.js";
+import type { SettingsService } from "../settings/settingsService.js";
 import type { SoundLibrary } from "../sounds/soundLibrary.js";
+import type { BootState } from "../system/bootState.js";
 import type { VolumeService } from "../volume/volumeService.js";
 
 /** How often to ping clients; one that hasn't answered by the next ping is disconnected. */
@@ -25,6 +27,8 @@ interface RealtimeOptions {
   playback: PlaybackService;
   volume: VolumeService;
   library: SoundLibrary;
+  settings: SettingsService;
+  boot: BootState;
   serverVersion: string;
   audioDriver: AudioDriverName;
   heartbeatIntervalMs?: number;
@@ -44,11 +48,13 @@ export async function registerRealtime(
     playback,
     volume,
     library,
+    settings,
+    boot,
     serverVersion,
     audioDriver,
     heartbeatIntervalMs = HEARTBEAT_INTERVAL_MS,
   }: RealtimeOptions,
-): Promise<void> {
+): Promise<{ disconnectAll: () => void }> {
   await app.register(fastifyWebsocket, {
     options: { maxPayload: MAX_INCOMING_MESSAGE_BYTES },
   });
@@ -59,9 +65,11 @@ export async function registerRealtime(
   const snapshot = (): SnapshotMessage => ({
     type: "snapshot",
     serverVersion,
+    bootId: boot.id,
     audioDriver,
     playback: playback.state,
     volume: volume.state,
+    settings: settings.state,
     sounds: library.list(),
     recentActivity: activity.list({ limit: SNAPSHOT_ACTIVITY_LIMIT }),
   });
@@ -93,6 +101,12 @@ export async function registerRealtime(
     bus.on("sounds.changed", (sounds) => {
       broadcast(clients, { type: "sounds.changed", sounds });
     }),
+    bus.on("settings.changed", (state) => {
+      broadcast(clients, { type: "settings.changed", settings: state });
+    }),
+    bus.on("device.rebooting", ({ bootId }) => {
+      broadcast(clients, { type: "device.rebooting", bootId });
+    }),
   ];
 
   const heartbeat = setInterval(() => {
@@ -113,6 +127,14 @@ export async function registerRealtime(
       unsubscribe();
     }
   });
+
+  return {
+    disconnectAll: () => {
+      for (const socket of clients) {
+        socket.close(1012, "The speaker is restarting");
+      }
+    },
+  };
 }
 
 function send(socket: WebSocket, message: ServerMessage): void {
