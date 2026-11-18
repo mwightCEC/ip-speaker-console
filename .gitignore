@@ -2,8 +2,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# Local configuration
+# Local configuration and device data (database, uploaded sounds)
 .env
+server/data/
 
 # Logs and OS files
 *.log

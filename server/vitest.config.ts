@@ -11,5 +11,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // node:sqlite prints an "experimental" warning in every worker on Node 22; it's expected.
+    execArgv: ["--disable-warning=ExperimentalWarning"],
   },
 });

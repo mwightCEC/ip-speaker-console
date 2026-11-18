@@ -1,11 +1,12 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { HealthResponse } from "@ip-speaker-console/shared";
+import type { ApiErrorBody, HealthResponse } from "@ip-speaker-console/shared";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
+import { IN_MEMORY } from "./storage/database.js";
 
 const INDEX_HTML = "<!doctype html><title>console</title>";
 
@@ -26,7 +27,12 @@ describe("buildApp", () => {
     if (withClientBuild) {
       writeFileSync(path.join(distDir, "index.html"), INDEX_HTML);
     }
-    app = await buildApp({ config: loadConfig({}), clientDistDir: distDir, logger: false });
+    app = await buildApp({
+      config: loadConfig({}),
+      clientDistDir: distDir,
+      databaseFile: IN_MEMORY,
+      logger: false,
+    });
   }
 
   it("reports health with the configured drivers", async () => {
@@ -56,6 +62,7 @@ describe("buildApp", () => {
     const asset = await app.inject({ method: "GET", url: "/assets/missing.js" });
 
     expect(api.statusCode).toBe(404);
+    expect(api.json<ApiErrorBody>().error.code).toBe("not_found");
     expect(asset.statusCode).toBe(404);
   });
 

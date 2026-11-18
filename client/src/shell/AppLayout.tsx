@@ -3,12 +3,10 @@ import { useDisclosure } from "@mantine/hooks";
 import { Outlet } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { Titlebar } from "./Titlebar";
-import { useServerCheck } from "./useServerCheck";
 
 /** Shared frame for every page: titlebar, sidebar and the routed page in the main area. */
 export function AppLayout() {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false);
-  useServerCheck();
 
   return (
     <AppShell
