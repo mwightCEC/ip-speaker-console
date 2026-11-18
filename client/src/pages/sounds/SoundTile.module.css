@@ -1,0 +1,23 @@
+.tile {
+  height: 100%;
+}
+
+/* Lets long names and file names shrink instead of pushing the menu off the tile. */
+.heading {
+  min-width: 0;
+}
+
+.name {
+  overflow-wrap: anywhere;
+}
+
+/* Pushes the buttons to the bottom, so they line up across a row of tiles. */
+.details {
+  flex: 1;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

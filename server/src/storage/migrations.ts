@@ -9,7 +9,6 @@ interface Migration {
 
 /**
  * Schema changes, applied in order. Never edit a migration that has shipped; add a new one.
- * Sounds (M5) add their table here when that milestone lands.
  */
 export const MIGRATIONS: readonly Migration[] = [
   {
@@ -39,6 +38,27 @@ export const MIGRATIONS: readonly Migration[] = [
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,
         updated_at TEXT NOT NULL
+      );
+    `,
+  },
+  {
+    version: 3,
+    description: "Create the sounds library",
+    // Uploaded files are stored as <id>.wav and built-in ones come with the console, so no
+    // file path is stored: a name typed by a person can never point the server at a file.
+    sql: `
+      CREATE TABLE sounds (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        built_in INTEGER NOT NULL DEFAULT 0,
+        pinned INTEGER NOT NULL DEFAULT 0,
+        duration_ms INTEGER NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        sample_rate INTEGER NOT NULL,
+        channels INTEGER NOT NULL,
+        bits_per_sample INTEGER NOT NULL,
+        added_at TEXT NOT NULL
       );
     `,
   },

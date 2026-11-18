@@ -1,20 +1,13 @@
 import type { ActivityPage, ApiErrorBody } from "@ip-speaker-console/shared";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildApp } from "../app.js";
-import { loadConfig } from "../config.js";
-import { IN_MEMORY } from "../storage/database.js";
+import { buildTestApp } from "../testing/buildTestApp.js";
 
 describe("GET /api/activity", () => {
   let app: FastifyInstance;
 
   beforeEach(async () => {
-    app = await buildApp({
-      config: loadConfig({}),
-      clientDistDir: "/nonexistent",
-      databaseFile: IN_MEMORY,
-      logger: false,
-    });
+    app = await buildTestApp();
   });
 
   afterEach(() => app.close());

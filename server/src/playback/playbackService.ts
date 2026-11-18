@@ -82,6 +82,11 @@ export class PlaybackService {
     return this.state;
   }
 
+  /** Stops a sound if it's the one playing, such as when it's deleted. */
+  async stopSound(soundId: string): Promise<PlaybackState> {
+    return this.#current?.sound.id === soundId ? this.stop() : this.state;
+  }
+
   #start(sound: LibrarySound): void {
     const controller = new AbortController();
     const active: ActivePlayback = {

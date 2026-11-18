@@ -1,22 +1,14 @@
 import type { ApiErrorBody, VolumeState } from "@ip-speaker-console/shared";
 import type { FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildApp } from "../app.js";
+import { buildTestApp } from "../testing/buildTestApp.js";
 import { MockAudioMixer, type AudioMixer } from "../audio/audioMixer.js";
-import { loadConfig } from "../config.js";
-import { IN_MEMORY } from "../storage/database.js";
 
 describe("volume routes", () => {
   let app: FastifyInstance;
 
   const start = async (audioMixer: AudioMixer = new MockAudioMixer()) => {
-    app = await buildApp({
-      config: loadConfig({}),
-      clientDistDir: "/nonexistent",
-      databaseFile: IN_MEMORY,
-      audioMixer,
-      logger: false,
-    });
+    app = await buildTestApp({ audioMixer });
   };
 
   const changeVolume = (payload: Record<string, unknown>) =>

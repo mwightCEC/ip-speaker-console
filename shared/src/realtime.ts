@@ -1,6 +1,7 @@
 import type { ActivityEvent } from "./activity.js";
 import type { AudioDriverName } from "./api.js";
 import type { PlaybackState } from "./playback.js";
+import type { Sound } from "./sounds.js";
 import type { VolumeState } from "./volume.js";
 
 /**
@@ -14,6 +15,8 @@ export interface SnapshotMessage {
   audioDriver: AudioDriverName;
   playback: PlaybackState;
   volume: VolumeState;
+  /** Every sound in the library, in display order. */
+  sounds: Sound[];
   /** Most recent activity, newest first. */
   recentActivity: ActivityEvent[];
 }
@@ -36,12 +39,19 @@ export interface VolumeChangedMessage {
   volume: VolumeState;
 }
 
+/** Sent whenever a sound is added, renamed, pinned, unpinned or deleted. Carries the whole list. */
+export interface SoundsChangedMessage {
+  type: "sounds.changed";
+  sounds: Sound[];
+}
+
 /** Every message the server sends over the WebSocket. */
 export type ServerMessage =
   | SnapshotMessage
   | ActivityCreatedMessage
   | PlaybackChangedMessage
-  | VolumeChangedMessage;
+  | VolumeChangedMessage
+  | SoundsChangedMessage;
 
 /** How many recent activity events a snapshot carries. */
 export const SNAPSHOT_ACTIVITY_LIMIT = 20;

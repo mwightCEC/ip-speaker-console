@@ -1,0 +1,52 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm) var(--mantine-spacing-xs)
+    var(--mantine-spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+/* The name and details take the room the buttons don't, and shrink first. */
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  overflow-wrap: anywhere;
+}
+
+.details {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.duration {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* On a phone the details get a line of their own, with the length and buttons below them. */
+@media (max-width: 36em) {
+  .row {
+    flex-wrap: wrap;
+    row-gap: var(--mantine-spacing-xs);
+  }
+
+  .info {
+    flex-basis: 100%;
+  }
+
+  .duration {
+    margin-inline-start: auto;
+  }
+}

@@ -11,6 +11,9 @@ function sound(id: string, name: string, durationMs: number): Sound {
     fileName: `${id}.wav`,
     sizeBytes: 1000,
     format: { sampleRate: 22_050, channels: 1, bitsPerSample: 16 },
+    builtIn: false,
+    pinned: true,
+    addedAt: "2026-11-18T10:00:00.000Z",
   };
 }
 
@@ -52,6 +55,11 @@ describe("pickPlaybackTarget", () => {
     expect(
       pickPlaybackTarget({ soundId: "alert", selectedAtMs: 20 }, playback, SOUNDS)?.soundId,
     ).toBe("alert");
+  });
+
+  it("shows a playing sound's new name after it's renamed", () => {
+    const playback = { lastStarted: started("chime", "Old chime", 10) };
+    expect(pickPlaybackTarget(undefined, playback, SOUNDS)?.name).toBe("Chime");
   });
 
   it("keeps showing a sound after it finishes", () => {

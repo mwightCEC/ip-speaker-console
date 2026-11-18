@@ -13,6 +13,7 @@
   gap: var(--mantine-spacing-sm);
   padding-inline-end: var(--mantine-spacing-sm);
   border-top: 1px solid var(--color-border);
+  transition: background-color 120ms ease;
 }
 
 .row:first-child {
@@ -35,7 +36,8 @@
   gap: 2px;
 }
 
-.select:hover {
+/* The whole row lights up on hover, buttons included, like a selected row. */
+.row:hover {
   background-color: var(--color-selected-bg);
 }
 

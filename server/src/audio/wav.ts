@@ -45,7 +45,7 @@ export function parseWavHeader(buffer: Buffer, fileSize = buffer.length): WavInf
     buffer.toString("ascii", 0, 4) !== "RIFF" ||
     buffer.toString("ascii", 8, 12) !== "WAVE"
   ) {
-    throw new WavFormatError("This isn't a WAV file.");
+    throw new WavFormatError(notWavMessage(buffer));
   }
 
   let format: FormatChunk | undefined;
@@ -108,4 +108,25 @@ function readFormatChunk(buffer: Buffer, start: number, size: number): FormatChu
   }
 
   return { channels, sampleRate, bitsPerSample, blockAlign };
+}
+
+/** Recognises other common audio files by their first bytes, to say what was uploaded instead. */
+const OTHER_AUDIO_FORMATS: readonly { name: string; matches: (buffer: Buffer) => boolean }[] = [
+  {
+    name: "an MP3",
+    matches: (buffer) =>
+      buffer.toString("ascii", 0, 3) === "ID3" ||
+      (buffer.length >= 2 && buffer[0] === 0xff && ((buffer[1] ?? 0) & 0xe0) === 0xe0),
+  },
+  { name: "an Ogg", matches: (buffer) => buffer.toString("ascii", 0, 4) === "OggS" },
+  { name: "a FLAC", matches: (buffer) => buffer.toString("ascii", 0, 4) === "fLaC" },
+  { name: "an M4A or MP4", matches: (buffer) => buffer.toString("ascii", 4, 8) === "ftyp" },
+  { name: "an AIFF", matches: (buffer) => buffer.toString("ascii", 0, 4) === "FORM" },
+];
+
+function notWavMessage(buffer: Buffer): string {
+  const other = OTHER_AUDIO_FORMATS.find((format) => format.matches(buffer));
+  return other
+    ? `This is ${other.name} file, not a WAV file. Convert it to WAV and try again.`
+    : "This isn't a WAV file.";
 }

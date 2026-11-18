@@ -1,6 +1,6 @@
 import { notifications } from "@mantine/notifications";
 import { useState } from "react";
-import { playSound, stopPlayback } from "../../api/playback";
+import { playSound, stopPlayback } from "../api/playback";
 
 /** What a play request needs: which sound, and its name for messages. */
 interface PlayableSound {

@@ -1,5 +1,29 @@
-/* The name, progress and times take the room the Play or Stop button doesn't. */
+/* The sound's details, then Preview and Play beside them. */
+.layout {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-lg);
+}
+
+/* The name, progress and times take the room the buttons don't. */
 .details {
   flex: 1;
   min-width: 0;
+}
+
+.buttons {
+  flex-shrink: 0;
+}
+
+/* On a phone the buttons go under the details, so the progress bar keeps its width. */
+@media (max-width: 36em) {
+  .layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--mantine-spacing-md);
+  }
+
+  .buttons {
+    justify-content: flex-end;
+  }
 }

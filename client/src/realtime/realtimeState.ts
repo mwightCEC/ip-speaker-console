@@ -6,6 +6,7 @@ import {
   type PlaybackResult,
   type PlaybackState,
   type ServerMessage,
+  type Sound,
   type VolumeState,
 } from "@ip-speaker-console/shared";
 
@@ -40,6 +41,8 @@ export interface RealtimeState {
   playback: LivePlayback;
   /** Set once the first snapshot arrives. */
   volume?: VolumeState;
+  /** Every sound in the library, in display order. Set once the first snapshot arrives. */
+  sounds?: Sound[];
   /** Newest first, at most SNAPSHOT_ACTIVITY_LIMIT events. */
   recentActivity: ActivityEvent[];
 }
@@ -68,12 +71,15 @@ export function applyServerMessage(
         audioDriver: message.audioDriver,
         playback: toLivePlayback(message.playback, state.playback, receivedAtMs),
         volume: message.volume,
+        sounds: message.sounds,
         recentActivity: message.recentActivity.slice(0, SNAPSHOT_ACTIVITY_LIMIT),
       };
     case "playback.changed":
       return { ...state, playback: toLivePlayback(message.playback, state.playback, receivedAtMs) };
     case "volume.changed":
       return { ...state, volume: message.volume };
+    case "sounds.changed":
+      return { ...state, sounds: message.sounds };
     case "activity.created": {
       if (state.recentActivity.some((event) => event.id === message.event.id)) {
         return state;

@@ -18,7 +18,8 @@ export interface SoundSelection {
  * Picks the sound for the Playback card: whichever happened last of this browser's selection
  * and a sound starting to play (from any browser). The sound stays after it finishes, ready to
  * play again, until another is selected or played. With neither, it falls back to the last
- * sound that played before this page opened.
+ * sound that played before this page opened. The name comes from the library when the sound is
+ * still in it, so a rename shows straight away.
  */
 export function pickPlaybackTarget(
   selection: SoundSelection | undefined,
@@ -32,9 +33,10 @@ export function pickPlaybackTarget(
     lastStarted &&
     (!selectedSound || lastStarted.startedAtLocalMs >= (selection?.selectedAtMs ?? 0))
   ) {
+    const current = sounds.find((sound) => sound.id === lastStarted.soundId);
     return {
       soundId: lastStarted.soundId,
-      name: lastStarted.soundName,
+      name: current?.name ?? lastStarted.soundName,
       durationMs: lastStarted.durationMs,
     };
   }

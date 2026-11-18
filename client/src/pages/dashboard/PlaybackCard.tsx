@@ -1,7 +1,7 @@
 import type { VolumeState } from "@ip-speaker-console/shared";
-import { Alert, Button, Divider, Group, Progress, Stack, Text } from "@mantine/core";
-import { IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-react";
+import { Alert, Divider, Group, Progress, Stack, Text } from "@mantine/core";
 import { formatDuration } from "../../format/time";
+import { PlayButton, PreviewButton } from "../../playback/SoundButtons";
 import type { LivePlayback } from "../../realtime/realtimeState";
 import { DashboardCard } from "./DashboardCard";
 import type { PlaybackTarget } from "./playbackTarget";
@@ -19,10 +19,14 @@ interface PlaybackCardProps {
   /** A play request for the target is in flight. */
   starting: boolean;
   stopping: boolean;
+  /** The target is being previewed in this browser. */
+  previewing: boolean;
+  onPreview: (target: PlaybackTarget) => void;
+  onStopPreview: () => void;
 }
 
 /**
- * The selected sound with Play or Stop, its progress, and the volume. The sound stays after it
+ * The selected sound with Play or Stop, Preview, its progress, and the volume. The sound stays after it
  * finishes, ready to play again.
  */
 export function PlaybackCard(props: PlaybackCardProps) {
@@ -48,6 +52,9 @@ function SelectedSound({
   onStop,
   starting,
   stopping,
+  previewing,
+  onPreview,
+  onStopPreview,
 }: PlaybackCardProps & { target: PlaybackTarget }) {
   const { nowPlaying, lastResult } = playback;
   const playingThis = nowPlaying?.soundId === target.soundId;
@@ -58,7 +65,7 @@ function SelectedSound({
 
   return (
     <Stack gap="md">
-      <Group wrap="nowrap" gap="lg">
+      <div className={classes.layout}>
         <Stack gap="xs" className={classes.details}>
           <Group justify="space-between" wrap="nowrap">
             <Text fw={600} size="lg" c="var(--color-text-primary)">
@@ -78,26 +85,24 @@ function SelectedSound({
             </Text>
           </Group>
         </Stack>
-        {playingThis ? (
-          <Button
-            color="danger"
-            variant="light"
-            leftSection={<IconPlayerStopFilled size={16} aria-hidden />}
-            loading={stopping}
-            onClick={onStop}
-          >
-            Stop
-          </Button>
-        ) : (
-          <Button
-            leftSection={<IconPlayerPlayFilled size={16} aria-hidden />}
-            loading={starting}
-            onClick={() => onPlay(target)}
-          >
-            Play
-          </Button>
-        )}
-      </Group>
+        <Group gap="xs" wrap="nowrap" className={classes.buttons}>
+          <PreviewButton
+            name={target.name}
+            previewing={previewing}
+            onPreview={() => onPreview(target)}
+            onStopPreview={onStopPreview}
+          />
+          <PlayButton
+            name={target.name}
+            variant="filled"
+            playing={playingThis}
+            starting={starting}
+            stopping={stopping}
+            onPlay={() => onPlay(target)}
+            onStop={onStop}
+          />
+        </Group>
+      </div>
 
       {failed && (
         <Alert color="danger" title={`Couldn't play ${target.name}`}>

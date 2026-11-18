@@ -3,7 +3,7 @@ import { ActivityPage } from "./pages/ActivityPage";
 import { DashboardPage } from "./pages/dashboard/DashboardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { SoundsPage } from "./pages/SoundsPage";
+import { SoundsPage } from "./pages/sounds/SoundsPage";
 import { AppLayout } from "./shell/AppLayout";
 
 // Paths match NAV_ITEMS in shell/navItems.ts. The server returns index.html for these routes.
