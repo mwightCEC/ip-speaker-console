@@ -1,0 +1,97 @@
+import fastifyWebsocket from "@fastify/websocket";
+import {
+  SNAPSHOT_ACTIVITY_LIMIT,
+  WS_PATH,
+  type ServerMessage,
+  type SnapshotMessage,
+} from "@ip-speaker-console/shared";
+import type { FastifyInstance } from "fastify";
+import type { WebSocket } from "ws";
+import type { ActivityService } from "../activity/activityService.js";
+import type { EventBus } from "../events/eventBus.js";
+
+/** How often to ping clients; one that hasn't answered by the next ping is disconnected. */
+const HEARTBEAT_INTERVAL_MS = 30_000;
+/** The console only receives small control messages from browsers. */
+const MAX_INCOMING_MESSAGE_BYTES = 16 * 1024;
+
+interface RealtimeOptions {
+  bus: EventBus;
+  activity: ActivityService;
+  serverVersion: string;
+  heartbeatIntervalMs?: number;
+}
+
+/**
+ * Pushes device events to browsers. Every connection first receives a full snapshot, so a
+ * client that reconnects after an outage is immediately up to date, then receives each change
+ * as it happens. A heartbeat drops connections that died without closing (a laptop going to
+ * sleep, a pulled network cable) so they don't pile up on the device.
+ */
+export async function registerRealtime(
+  app: FastifyInstance,
+  { bus, activity, serverVersion, heartbeatIntervalMs = HEARTBEAT_INTERVAL_MS }: RealtimeOptions,
+): Promise<void> {
+  await app.register(fastifyWebsocket, {
+    options: { maxPayload: MAX_INCOMING_MESSAGE_BYTES },
+  });
+
+  const clients = new Set<WebSocket>();
+  const awaitingPong = new WeakSet<WebSocket>();
+
+  const snapshot = (): SnapshotMessage => ({
+    type: "snapshot",
+    serverVersion,
+    recentActivity: activity.list({ limit: SNAPSHOT_ACTIVITY_LIMIT }),
+  });
+
+  app.get(WS_PATH, { websocket: true }, (socket, request) => {
+    clients.add(socket);
+    request.log.debug({ clients: clients.size }, "WebSocket client connected");
+
+    socket.on("pong", () => awaitingPong.delete(socket));
+    socket.on("close", () => {
+      clients.delete(socket);
+      request.log.debug({ clients: clients.size }, "WebSocket client disconnected");
+    });
+    socket.on("error", (error) => request.log.warn({ err: error }, "WebSocket client error"));
+
+    send(socket, snapshot());
+  });
+
+  const unsubscribe = bus.on("activity.created", (event) => {
+    broadcast(clients, { type: "activity.created", event });
+  });
+
+  const heartbeat = setInterval(() => {
+    for (const socket of clients) {
+      if (awaitingPong.has(socket)) {
+        socket.terminate();
+        continue;
+      }
+      awaitingPong.add(socket);
+      socket.ping();
+    }
+  }, heartbeatIntervalMs);
+  heartbeat.unref();
+
+  app.addHook("onClose", async () => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  });
+}
+
+function send(socket: WebSocket, message: ServerMessage): void {
+  if (socket.readyState === socket.OPEN) {
+    socket.send(JSON.stringify(message));
+  }
+}
+
+function broadcast(clients: Iterable<WebSocket>, message: ServerMessage): void {
+  const payload = JSON.stringify(message);
+  for (const socket of clients) {
+    if (socket.readyState === socket.OPEN) {
+      socket.send(payload);
+    }
+  }
+}

@@ -6,6 +6,7 @@ import { MantineProvider } from "@mantine/core";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
+import { realtimeClient } from "./realtime/useRealtime";
 import { router } from "./router";
 import { cssVariablesResolver } from "./theme/cssVariablesResolver";
 import { theme } from "./theme/theme";
@@ -14,6 +15,8 @@ const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("The #root element is missing from index.html.");
 }
+
+realtimeClient.start();
 
 createRoot(rootElement).render(
   <StrictMode>
