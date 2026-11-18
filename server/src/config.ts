@@ -23,6 +23,8 @@ export interface ServerConfig {
   dataDir: string;
   /** How many activity events to keep; older ones are deleted as new ones arrive. */
   activityRetention: number;
+  /** ALSA mixer control the volume slider changes when the audio driver is aplay. */
+  mixerControl: string;
 }
 
 /** Thrown when an environment variable has a value the server can't use. */
@@ -44,6 +46,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     systemDriver: parseChoice("SYSTEM_DRIVER", env.SYSTEM_DRIVER, SYSTEM_DRIVERS, "mock"),
     dataDir: path.resolve(env.DATA_DIR?.trim() || DEFAULT_DATA_DIR),
     activityRetention: parseRetention(env.ACTIVITY_RETENTION),
+    mixerControl: env.ALSA_MIXER_CONTROL?.trim() || "Master",
   };
 }
 

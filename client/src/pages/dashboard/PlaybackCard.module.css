@@ -1,0 +1,5 @@
+/* The name, progress and times take the room the Play or Stop button doesn't. */
+.details {
+  flex: 1;
+  min-width: 0;
+}

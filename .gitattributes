@@ -1,0 +1,9 @@
+# Store and check out text files with LF line endings on every platform, so Windows checkouts
+# match what Oxfmt writes and files don't show as modified after formatting.
+* text=auto eol=lf
+
+# Binary assets
+*.wav binary
+*.png binary
+*.ico binary
+*.woff2 binary

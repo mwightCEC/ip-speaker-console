@@ -1,0 +1,45 @@
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  padding-inline-end: var(--mantine-spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+/* Selected row: tinted with a bar on the left, like the selected sidebar item. */
+.row[data-selected] {
+  background-color: var(--color-selected-bg);
+  box-shadow: inset 3px 0 0 var(--color-selected-text);
+}
+
+/* The name and details are the row's select button, so they fill the space. */
+.select {
+  flex: 1;
+  min-width: 0;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.select:hover {
+  background-color: var(--color-selected-bg);
+}
+
+.duration {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}

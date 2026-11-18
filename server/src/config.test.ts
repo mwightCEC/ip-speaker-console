@@ -13,6 +13,7 @@ describe("loadConfig", () => {
       systemDriver: "mock",
       dataDir: expect.stringMatching(/server[\\/]data$/),
       activityRetention: 5000,
+      mixerControl: "Master",
     });
     expect(path.isAbsolute(config.dataDir)).toBe(true);
   });
@@ -26,6 +27,7 @@ describe("loadConfig", () => {
       SYSTEM_DRIVER: "linux",
       DATA_DIR: "/var/lib/ip-speaker-console",
       ACTIVITY_RETENTION: "2000",
+      ALSA_MIXER_CONTROL: "PCM",
     });
     expect(config).toEqual({
       host: "0.0.0.0",
@@ -35,6 +37,7 @@ describe("loadConfig", () => {
       systemDriver: "linux",
       dataDir: path.resolve("/var/lib/ip-speaker-console"),
       activityRetention: 2000,
+      mixerControl: "PCM",
     });
   });
 

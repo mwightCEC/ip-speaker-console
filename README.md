@@ -12,8 +12,8 @@ Development follows numbered milestones. Pages that aren't built yet show what's
 | --------- | ----------------------------------------------------------- | ----------- |
 | M1        | Workspaces, Fastify server, Vite client, tooling            | Done        |
 | M2        | App shell: titlebar, sidebar, routes, light and dark themes | Done        |
-| M3        | SQLite storage, activity log, WebSocket real-time updates   | In progress |
-| M4        | Audio engine (mock and `aplay`) and Dashboard               | Planned     |
+| M3        | SQLite storage, activity log, WebSocket real-time updates   | Done        |
+| M4        | Audio engine (mock and `aplay`) and Dashboard               | In progress |
 | M5        | Sounds library and WAV uploads                              | Planned     |
 | M6        | Activity page, Settings and reboot                          | Planned     |
 | M7        | Hardware integration on the ROCK Pi S                       | Planned     |
@@ -80,6 +80,7 @@ The server reads environment variables. To change them during development, copy
 | `SYSTEM_DRIVER`      | `mock`        | `mock` simulates network and reboot; `linux` uses the real device        |
 | `DATA_DIR`           | `server/data` | Folder for the database (and, from M5, uploaded sounds)                  |
 | `ACTIVITY_RETENTION` | `5000`        | Activity log entries to keep (at least 100); older ones are deleted      |
+| `ALSA_MIXER_CONTROL` | `Master`      | ALSA mixer control the volume slider changes when `AUDIO_DRIVER=aplay`   |
 
 An invalid value stops the server at startup with a message naming the variable.
 
@@ -88,14 +89,23 @@ An invalid value stops the server at startup with a message naming the variable.
 ```text
 shared/   Types and constants used by both sides: API shapes, WebSocket messages, activity events
 server/   Fastify API and WebSocket server
+  assets/sounds/  Sample sounds bundled with the console (until the sounds library in M5)
   src/activity/   Activity log: storage, service and GET /api/activity
+  src/audio/      Audio drivers (mock and aplay), mixers (mock and amixer), WAV header reader
   src/events/     In-process event bus connecting services to the WebSocket hub
   src/http/       API error handling
+  src/playback/   Playback service and /api/playback routes
   src/realtime/   WebSocket hub: snapshot on connect, then live updates
+  src/settings/   Settings store (one JSON value per key)
+  src/sounds/     Playable sounds and GET /api/sounds
   src/storage/    SQLite connection and schema migrations
+  src/volume/     Volume service and /api/volume routes
 client/   React app (Vite, Mantine)
+  src/api/        REST calls and API error handling
+  src/components/ Components shared by several pages
+  src/format/     Time and duration formatting
+  src/pages/      One component per page; larger pages have a folder of their own parts
   src/shell/      Titlebar, sidebar and page layout
-  src/pages/      One component per page
   src/realtime/   WebSocket connection, reconnection and live state
   src/theme/      Palette, role color tokens and Mantine theme
 ```
@@ -124,11 +134,47 @@ default 50), `before` (an event ID, for the next page), `category` (`playback`, 
 `settings` or `device`) and `outcome` (`success`, `warning`, `failure` or `info`). The response
 includes `nextBefore` when there are older events.
 
+### Playback
+
+The speaker plays one sound at a time. Playing a sound while another is playing stops the current
+one first, so an urgent announcement never waits. Each start and ending (finished, stopped,
+replaced or failed, with the reason) is recorded as activity.
+
+- `GET /api/sounds` lists the sounds that can be played.
+- `GET /api/playback` returns what's playing and how the last sound ended.
+- `POST /api/playback` with `{ "soundId": "chime" }` plays a sound.
+- `POST /api/playback/stop` stops it.
+
+### Volume
+
+The volume (0 to 100 %, starting at 80 %) is saved in the database and applied again when the
+server starts, so it survives restarts and reboots. With `AUDIO_DRIVER=aplay` it's set with
+`amixer` on the ALSA control named by `ALSA_MIXER_CONTROL`; the mock driver only remembers it.
+Muting sets the mixer to 0 % but keeps the volume, so unmuting brings it back; the mute is saved
+too. Every change is recorded as activity and pushed to every browser as a `volume.changed`
+message.
+
+- `GET /api/volume` returns `{ "percent": 80, "muted": false }`.
+- `PUT /api/volume` with `{ "percent": 60 }`, `{ "muted": true }` or both changes them.
+
+The Dashboard's slider sends a change once it has been still for a moment, so dragging it or
+holding an arrow key makes one change rather than dozens. The speaker icon next to it mutes and
+unmutes (red while muted), and moving the slider while muted unmutes.
+
+The audio driver does the playing. `mock` waits for as long as the sound lasts without making a
+noise, so everything works on a development machine; `aplay` runs ALSA's `aplay` on the device.
+Sounds must be uncompressed (PCM) WAV files; their length comes from the WAV header.
+
+Until the sounds library arrives in M5, the console plays three sample sounds generated for it
+(a 1 kHz test tone, a chime and an alert) from `server/assets/sounds`. A production install needs
+that folder next to `server/dist`.
+
 ### Real-time updates
 
 Browsers keep a WebSocket open to `/ws`. On every connection, including reconnects, the server
-first sends a `snapshot` message with the current state, then an `activity.created` message for
-each new event. Because each connection starts from a full snapshot, a browser that was
+first sends a `snapshot` message with the current state, then a message for each change:
+`activity.created` for a new event, `playback.changed` when playback starts or ends, and
+`volume.changed` when the volume changes. Because each connection starts from a full snapshot, a browser that was
 disconnected during a reboot or network outage is up to date as soon as it reconnects.
 
 The browser reconnects automatically with increasing delays (1 s, 2 s, 4 s … up to 30 s) and

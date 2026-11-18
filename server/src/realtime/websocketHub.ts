@@ -1,6 +1,7 @@
 import fastifyWebsocket from "@fastify/websocket";
 import {
   SNAPSHOT_ACTIVITY_LIMIT,
+  type AudioDriverName,
   WS_PATH,
   type ServerMessage,
   type SnapshotMessage,
@@ -9,6 +10,8 @@ import type { FastifyInstance } from "fastify";
 import type { WebSocket } from "ws";
 import type { ActivityService } from "../activity/activityService.js";
 import type { EventBus } from "../events/eventBus.js";
+import type { PlaybackService } from "../playback/playbackService.js";
+import type { VolumeService } from "../volume/volumeService.js";
 
 /** How often to ping clients; one that hasn't answered by the next ping is disconnected. */
 const HEARTBEAT_INTERVAL_MS = 30_000;
@@ -18,7 +21,10 @@ const MAX_INCOMING_MESSAGE_BYTES = 16 * 1024;
 interface RealtimeOptions {
   bus: EventBus;
   activity: ActivityService;
+  playback: PlaybackService;
+  volume: VolumeService;
   serverVersion: string;
+  audioDriver: AudioDriverName;
   heartbeatIntervalMs?: number;
 }
 
@@ -30,7 +36,15 @@ interface RealtimeOptions {
  */
 export async function registerRealtime(
   app: FastifyInstance,
-  { bus, activity, serverVersion, heartbeatIntervalMs = HEARTBEAT_INTERVAL_MS }: RealtimeOptions,
+  {
+    bus,
+    activity,
+    playback,
+    volume,
+    serverVersion,
+    audioDriver,
+    heartbeatIntervalMs = HEARTBEAT_INTERVAL_MS,
+  }: RealtimeOptions,
 ): Promise<void> {
   await app.register(fastifyWebsocket, {
     options: { maxPayload: MAX_INCOMING_MESSAGE_BYTES },
@@ -42,6 +56,9 @@ export async function registerRealtime(
   const snapshot = (): SnapshotMessage => ({
     type: "snapshot",
     serverVersion,
+    audioDriver,
+    playback: playback.state,
+    volume: volume.state,
     recentActivity: activity.list({ limit: SNAPSHOT_ACTIVITY_LIMIT }),
   });
 
@@ -59,9 +76,17 @@ export async function registerRealtime(
     send(socket, snapshot());
   });
 
-  const unsubscribe = bus.on("activity.created", (event) => {
-    broadcast(clients, { type: "activity.created", event });
-  });
+  const unsubscribers = [
+    bus.on("activity.created", (event) => {
+      broadcast(clients, { type: "activity.created", event });
+    }),
+    bus.on("playback.changed", (state) => {
+      broadcast(clients, { type: "playback.changed", playback: state });
+    }),
+    bus.on("volume.changed", (state) => {
+      broadcast(clients, { type: "volume.changed", volume: state });
+    }),
+  ];
 
   const heartbeat = setInterval(() => {
     for (const socket of clients) {
@@ -77,7 +102,9 @@ export async function registerRealtime(
 
   app.addHook("onClose", async () => {
     clearInterval(heartbeat);
-    unsubscribe();
+    for (const unsubscribe of unsubscribers) {
+      unsubscribe();
+    }
   });
 }
 
