@@ -1,0 +1,11 @@
+.slider {
+  flex: 1;
+}
+
+/* Room for "Muted" so the slider doesn't shift as the text changes. */
+.value {
+  flex-shrink: 0;
+  min-width: 5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

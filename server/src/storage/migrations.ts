@@ -9,7 +9,7 @@ interface Migration {
 
 /**
  * Schema changes, applied in order. Never edit a migration that has shipped; add a new one.
- * Sounds (M5) and settings (M6) add their tables here when those milestones land.
+ * Sounds (M5) add their table here when that milestone lands.
  */
 export const MIGRATIONS: readonly Migration[] = [
   {
@@ -28,6 +28,18 @@ export const MIGRATIONS: readonly Migration[] = [
       );
       CREATE INDEX activity_category ON activity (category, id);
       CREATE INDEX activity_outcome ON activity (outcome, id);
+    `,
+  },
+  {
+    version: 2,
+    description: "Create the settings store",
+    // One row per setting, with its value as JSON. Volume is the first; M6 adds the rest.
+    sql: `
+      CREATE TABLE settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
     `,
   },
 ];

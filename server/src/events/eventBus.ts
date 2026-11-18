@@ -1,14 +1,18 @@
 import { EventEmitter } from "node:events";
-import type { ActivityEvent } from "@ip-speaker-console/shared";
+import type { ActivityEvent, PlaybackState, VolumeState } from "@ip-speaker-console/shared";
 import type { FastifyBaseLogger } from "fastify";
 
 /**
  * Everything that happens inside the server that other parts may react to. Services emit;
- * the WebSocket hub (and later, other services) listen. Later milestones add playback and
- * settings events here.
+ * the WebSocket hub (and later, other services) listen. Later milestones add settings events
+ * here.
  */
 export interface ServerEvents {
   "activity.created": ActivityEvent;
+  /** Playback started or ended. Carries the new state. */
+  "playback.changed": PlaybackState;
+  /** The volume changed. */
+  "volume.changed": VolumeState;
 }
 
 type Listener<K extends keyof ServerEvents> = (payload: ServerEvents[K]) => void;

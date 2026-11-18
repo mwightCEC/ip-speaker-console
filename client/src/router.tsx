@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { ActivityPage } from "./pages/ActivityPage";
-import { DashboardPage } from "./pages/DashboardPage";
+import { DashboardPage } from "./pages/dashboard/DashboardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SoundsPage } from "./pages/SoundsPage";

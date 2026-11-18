@@ -1,8 +1,10 @@
 import "@fontsource-variable/inter-tight/index.css";
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 import "./theme/tokens.css";
 import "./theme/global.css";
 import { MantineProvider } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
@@ -25,6 +27,7 @@ createRoot(rootElement).render(
       cssVariablesResolver={cssVariablesResolver}
       defaultColorScheme="auto"
     >
+      <Notifications position="bottom-right" />
       <RouterProvider router={router} />
     </MantineProvider>
   </StrictMode>,

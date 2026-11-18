@@ -59,7 +59,7 @@ describe("WebSocket hub", () => {
 
   afterEach(() => app.close());
 
-  it("sends a snapshot with recent activity as the first message", async () => {
+  it("sends a snapshot of the device state as the first message", async () => {
     app.activity.record({ category: "device", outcome: "info", message: "Console started" });
 
     const client = await connect(app);
@@ -68,7 +68,26 @@ describe("WebSocket hub", () => {
     expect(first).toMatchObject({
       type: "snapshot",
       serverVersion: expect.stringMatching(/^\d+\.\d+\.\d+/),
+      audioDriver: "mock",
+      playback: {},
       recentActivity: [{ message: "Console started" }],
+    });
+    client.socket.terminate();
+  });
+
+  it("pushes playback changes to every connected client", async () => {
+    const client = await connect(app);
+    await client.next();
+
+    await app.inject({ method: "POST", url: "/api/playback", payload: { soundId: "chime" } });
+
+    expect(await client.next()).toMatchObject({
+      type: "activity.created",
+      event: { message: "Started playing Chime" },
+    });
+    expect(await client.next()).toMatchObject({
+      type: "playback.changed",
+      playback: { nowPlaying: { soundId: "chime", durationMs: 2200 } },
     });
     client.socket.terminate();
   });
